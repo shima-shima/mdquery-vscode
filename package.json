@@ -1,0 +1,76 @@
+{
+  "name": "mdquery",
+  "displayName": "MdQuery",
+  "description": "Markdown の箇条書きに埋め込まれたメタデータをクエリでフィルタリング",
+  "version": "0.1.0",
+  "publisher": "mdquery",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mdquery.openPanel",
+        "title": "MdQuery: Open Query Panel",
+        "icon": "$(search)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "mdquery.openPanel",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "mdquery.openPanel",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "MdQuery",
+      "properties": {
+        "mdquery.debounceMs": {
+          "type": "number",
+          "default": 200,
+          "description": "Markdown 変更検知のデバウンス時間 (ms)"
+        },
+        "mdquery.presetQueries": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "expr": { "type": "string" }
+            }
+          },
+          "description": "プリセットクエリの一覧 (例: [{\"label\": \"高優先度\", \"expr\": \"@priority(high)\"}])"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "unified": "^11.0.5",
+    "remark-parse": "^11.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.5.0"
+  }
+}
