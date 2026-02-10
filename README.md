@@ -42,3 +42,81 @@ Markdown の笇条書きに埋め込まれた `#tag` `@key(val)` `key:val` `<!--
 |---|---|---|
 | `mdquery.debounceMs` | `200` | 変更検知のデバウンス時間 |
 | `mdquery.presetQueries` | `[]` | プリセットクエリのリスト |
+
+---
+
+## ビルド・パッケージング・インストール
+
+### 前提条件
+
+- **Node.js** 18 以上
+- **npm** 9 以上
+
+### 1. 依存関係のインストール
+
+```bash
+cd mdquery-vscode
+npm install
+```
+
+### 2. ビルド
+
+```bash
+npm run build
+```
+
+esbuild で 2 つのバンドルが生成されます:
+
+| 出力 | 役割 |
+|---|---|
+| `dist/extension.js` | Extension Host (コアロジック、Node.js環境) |
+| `dist/webview.js` | Webview UI (ブラウザ環境) |
+
+開発中はファイル監視モードも使えます:
+
+```bash
+npm run watch
+```
+
+### 3. .vsix パッケージ生成
+
+```bash
+npx vsce package --allow-missing-repository
+```
+
+`mdquery-0.1.0.vsix` がプロジェクトルートに生成されます。
+
+> `--allow-missing-repository` は Git リモートリポジトリが未設定の場合に必要です。`package.json` に `"repository"` を設定すれば不要になります。
+
+### 4. VS Code へのインストール
+
+#### 方法 A: コマンドラインから
+
+```bash
+code --install-extension mdquery-0.1.0.vsix
+```
+
+#### 方法 B: VS Code の GUI から
+
+1. `Cmd+Shift+P` (macOS) / `Ctrl+Shift+P` (Windows/Linux)
+2. **"Extensions: Install from VSIX..."** を選択
+3. 生成された `mdquery-0.1.0.vsix` を選択
+
+インストール後、VS Code の再読み込みが促されるので **Reload Window** を実行してください。
+
+### 5. アンインストール
+
+```bash
+code --uninstall-extension mdquery.mdquery
+```
+
+または拡張機能パネルで "MdQuery" を検索し、歯車アイコン → **アンインストール** を選択。
+
+### 6. デバッグ実行 (開発用)
+
+1. VS Code で `mdquery-vscode/` フォルダを開く
+2. `F5` を押す (または Run and Debug パネルから **"Run Extension"**)
+3. 新しい VS Code ウィンドウが開き、拡張機能が読み込まれた状態で起動
+4. `.md` ファイルを開き、`Cmd+Shift+P` → **"MdQuery: Open Query Panel"**
+
+> ファイル変更を自動検知させたい場合は、別ターミナルで `npm run watch` を並行実行してください。
