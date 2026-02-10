@@ -11,7 +11,7 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
-import type { Root, ListItem, List, PhrasingContent } from "mdast";
+import type { Root, ListItem, List, PhrasingContent, Heading } from "mdast";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -30,6 +30,8 @@ export interface ParsedItem {
   checked: boolean | null;
   /** 1-based source line number */
   line: number;
+  /** Heading level 1-4 if this item represents a heading, undefined otherwise */
+  headingLevel?: number;
   /** Nested child items */
   children?: ParsedItem[];
 }
@@ -158,30 +160,105 @@ function processListItem(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Heading processing                                                 */
+/* ------------------------------------------------------------------ */
+
+function processHeading(
+  heading: Heading,
+  sourceLines: string[]
+): ParsedItem {
+  const fullText = extractText(heading.children);
+  const { tags, meta, cleanText } = extractMetadata(fullText);
+
+  const lineNum = heading.position?.start.line ?? 0;
+  const rawLine = lineNum > 0 ? sourceLines[lineNum - 1] : "";
+
+  return {
+    text: cleanText,
+    rawLine,
+    tags,
+    meta,
+    checked: null,
+    line: lineNum,
+    headingLevel: heading.depth,
+    children: [],
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Public API                                                         */
 /* ------------------------------------------------------------------ */
 
 /**
  * Parse Markdown and return a tree of ParsedItem.
+ *
+ * Headings (depth 1-4) become structural nodes whose children contain
+ * subsequent list items and sub-headings, based on heading-level hierarchy.
+ * Lists appearing before any heading are placed at the root level.
  */
 export function parseMarkdown(markdown: string): ParsedItem[] {
   const processor = unified().use(remarkParse).use(remarkGfm);
   const tree = processor.parse(markdown) as Root;
   const sourceLines = markdown.split("\n");
-  const items: ParsedItem[] = [];
+  const rootItems: ParsedItem[] = [];
 
-  function walk(node: Root | List) {
-    for (const child of node.children) {
-      if (child.type === "list") {
-        walk(child as List);
-      } else if (child.type === "listItem") {
-        items.push(processListItem(child, sourceLines));
+  // Stack of heading ParsedItems currently open.
+  const stack: ParsedItem[] = [];
+
+  /** Return the children array to append into: either the top of stack or root. */
+  function currentChildren(): ParsedItem[] {
+    if (stack.length > 0) {
+      const top = stack[stack.length - 1];
+      if (!top.children) top.children = [];
+      return top.children;
+    }
+    return rootItems;
+  }
+
+  /** Collect list items from a top-level list node. */
+  function collectListItems(list: List): ParsedItem[] {
+    return list.children.map((li) => processListItem(li, sourceLines));
+  }
+
+  for (const child of tree.children) {
+    if (child.type === "heading" && child.depth >= 2 && child.depth <= 4) {
+      const headingItem = processHeading(child as Heading, sourceLines);
+
+      // Pop stack until the top has a level strictly less than this heading
+      while (
+        stack.length > 0 &&
+        (stack[stack.length - 1].headingLevel ?? 0) >= child.depth
+      ) {
+        stack.pop();
+      }
+
+      // Append this heading as a child of whatever is now current
+      currentChildren().push(headingItem);
+
+      // Push onto stack so subsequent content nests under it
+      stack.push(headingItem);
+    } else if (child.type === "list") {
+      const listItems = collectListItems(child as List);
+      currentChildren().push(...listItems);
+    }
+    // Other node types (paragraphs, code blocks, etc.) are ignored
+  }
+
+  // Clean up empty children arrays on headings that ended up with none
+  function pruneEmptyChildren(items: ParsedItem[]) {
+    for (const item of items) {
+      if (item.children) {
+        if (item.children.length === 0) {
+          delete item.children;
+        } else {
+          pruneEmptyChildren(item.children);
+        }
       }
     }
   }
+  pruneEmptyChildren(rootItems);
 
-  walk(tree);
-  return items;
+  return rootItems;
 }
 
 /** Recursively count all items. */

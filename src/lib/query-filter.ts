@@ -109,6 +109,31 @@ function parseQuery(expression: string): Query {
 /*  Evaluation                                                         */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/*  Relative date resolution                                           */
+/* ------------------------------------------------------------------ */
+
+/** Match `today`, `today+N`, `today-N` (case-insensitive). */
+const RELATIVE_DATE_RE = /^today([+-]\d+)?$/i;
+
+/**
+ * If `value` is a relative date expression (`today`, `today+3`, `today-7`),
+ * resolve it to an ISO date string (YYYY-MM-DD).  Otherwise return as-is.
+ */
+function resolveRelativeDate(value: string): string {
+  const m = value.match(RELATIVE_DATE_RE);
+  if (!m) return value;
+  const d = new Date();
+  if (m[1]) {
+    d.setDate(d.getDate() + parseInt(m[1], 10));
+  }
+  // YYYY-MM-DD
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function smartCompare(a: string, b: string, op: ">" | "<"): boolean {
   const na = Number(a);
   const nb = Number(b);
@@ -130,16 +155,17 @@ function evalCondition(c: Condition, item: ParsedItem): boolean {
 
     case "meta": {
       const val = item.meta[c.key];
+      const resolved = resolveRelativeDate(c.value);
       result =
         val !== undefined &&
-        val.toLowerCase().includes(c.value.toLowerCase());
+        val.toLowerCase().includes(resolved.toLowerCase());
       return c.neg ? !result : result;
     }
 
     case "cmp": {
       const val = item.meta[c.key];
       if (val === undefined) return false;
-      return smartCompare(val, c.value, c.op);
+      return smartCompare(val, resolveRelativeDate(c.value), c.op);
     }
 
     case "checked":

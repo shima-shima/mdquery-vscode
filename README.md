@@ -18,10 +18,17 @@ Markdown の笇条書きに埋め込まれた `#tag` `@key(val)` `key:val` `<!--
 | `@key(value)` | `@priority(high)` | メタデータ検索 |
 | `key:value` | `cost:5000` | コロンKV検索 |
 | `key>value` | `cost>3000` | 比較 |
+| `key<today+30` | `due<today+30` | 相対日付 (today/today±N) |
 | `checked:true` | | チェックボックス状態 |
 | `!expr` | `!#draft` | 否定 |
 | `スペース` | `#backend @priority(high)` | AND |
 | `OR` | `#frontend OR #design` | OR |
+
+## 見出し対応
+
+- h2〜h4 の見出しはツリーノードとしてパースされ、配下のリストを子として保持
+- 見出し自体にも `#tag` や `@key(val)` を埋め込める
+- h1 はタイトルとみなしフィルタ対象外
 
 ## Usage
 

@@ -423,6 +423,7 @@ export class MdQueryPanelProvider {
     .md-line { padding: 1px 4px; border-radius: 2px; cursor: pointer; display: block; }
     .md-line:hover { background: var(--vscode-list-hoverBackground); }
     .md-line.ancestor { opacity: 0.5; }
+    .md-line.heading { font-weight: 700; margin-top: 6px; }
     .md-line .parent-label {
       font-size: 10px;
       color: var(--vscode-descriptionForeground);
@@ -447,6 +448,34 @@ export class MdQueryPanelProvider {
     }
     .card:hover { background: var(--vscode-list-hoverBackground); }
     .card.ancestor { border-style: dashed; opacity: 0.6; }
+    .card.heading-card { background: color-mix(in srgb, var(--vscode-sideBar-background) 50%, transparent); border-left: 3px solid var(--vscode-textLink-foreground); }
+    .heading-icon {
+      width: 18px; height: 18px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      color: var(--vscode-textLink-foreground);
+      background: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+      border-radius: 3px;
+    }
+    .heading-icon-sm {
+      width: 14px; height: 14px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700;
+      color: var(--vscode-textLink-foreground);
+      background: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+      border-radius: 2px;
+    }
+    .heading-level-label {
+      color: var(--vscode-textLink-foreground);
+      font-weight: 500;
+    }
+    .heading-badge {
+      font-size: 10px;
+      color: var(--vscode-textLink-foreground);
+      background: color-mix(in srgb, var(--vscode-textLink-foreground) 10%, transparent);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
     .card-header {
       display: flex;
       align-items: flex-start;

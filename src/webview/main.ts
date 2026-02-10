@@ -18,12 +18,14 @@ interface ParsedItem {
   meta: Record<string, string>;
   checked: boolean | null;
   line: number;
+  headingLevel?: number;
   children?: ParsedItem[];
 }
 
 interface FlatItem extends ParsedItem {
   depth: number;
   isAncestor: boolean;
+  headingLevel?: number;
 }
 
 interface FilterResultMessage {
@@ -53,6 +55,9 @@ const DEFAULT_PRESETS: Array<{ label: string; expr: string }> = [
   { label: '#frontend OR #design', expr: '#frontend OR #design' },
   { label: '完了済み', expr: 'checked:true' },
   { label: '未完了 高優先度', expr: '!checked:true @priority(high)' },
+  { label: 'due < today', expr: 'due<today' },
+  { label: 'due < today+30', expr: 'due<today+30' },
+  { label: '#infra (見出し)', expr: '#infra' },
 ];
 
 // ----- State -----
@@ -272,7 +277,8 @@ function mdLinesHtml(items: ParsedItem[]): string {
   let html = '';
   for (const it of items) {
     const isAnc = currentAncestorLines.has(it.line);
-    html += `<span class="md-line${isAnc ? ' ancestor' : ''}" data-line="${it.line}">`;
+    const isHeading = !!it.headingLevel;
+    html += `<span class="md-line${isAnc ? ' ancestor' : ''}${isHeading ? ' heading' : ''}" data-line="${it.line}">`;
     html += esc(it.rawLine);
     if (isAnc) html += `<span class="parent-label">← parent</span>`;
     html += `</span>\n`;
@@ -306,20 +312,38 @@ function renderMarkdownTab() {
 }
 
 // ===== LIST TAB =====
+function headingTextHtml(level: number, text: string): string {
+  const sizes = ['font-size:18px;font-weight:700', 'font-size:16px;font-weight:700', 'font-size:14px;font-weight:600', 'font-size:13px;font-weight:600'];
+  const style = sizes[level - 1] || sizes[3];
+  return `<span style="${style}">${esc(text)}</span>`;
+}
+
 function cardsHtml(items: ParsedItem[], depth: number): string {
   let html = '';
   for (const it of items) {
     const isAnc = currentAncestorLines.has(it.line);
-    html += `<div class="card${isAnc ? ' ancestor' : ''}" data-line="${it.line}">`;
+    const isHeading = !!it.headingLevel;
+    html += `<div class="card${isAnc ? ' ancestor' : ''}${isHeading ? ' heading-card' : ''}" data-line="${it.line}">`;
     html += `<div class="card-header">`;
     html += `<div class="card-left">`;
-    html += checkIconHtml(it.checked);
-    if (depth > 0) html += `<span style="color:var(--vscode-descriptionForeground);font-size:12px">›</span>`;
+    if (isHeading) {
+      html += `<span class="heading-icon" title="H${it.headingLevel}">H</span>`;
+    } else {
+      html += checkIconHtml(it.checked);
+      if (depth > 0) html += `<span style="color:var(--vscode-descriptionForeground);font-size:12px">›</span>`;
+    }
     html += `<div>`;
-    html += `<div class="card-text">${esc(it.text)}`;
+    html += `<div class="card-text">`;
+    if (isHeading) {
+      html += headingTextHtml(it.headingLevel!, it.text);
+    } else {
+      html += esc(it.text);
+    }
     if (isAnc) html += ` <span style="font-size:10px;opacity:0.6;background:var(--vscode-textBlockQuote-background);padding:1px 4px;border-radius:3px">parent</span>`;
     html += `</div>`;
-    html += `<div class="card-line">Line ${it.line}</div>`;
+    html += `<div class="card-line">`;
+    if (isHeading) html += `<span class="heading-level-label">H${it.headingLevel} · </span>`;
+    html += `Line ${it.line}</div>`;
     html += `</div></div>`;
     if (it.tags.length > 0 || Object.keys(it.meta).length > 0) {
       html += `<div class="card-badges">${tagBadgesHtml(it.tags)}${metaBadgesHtml(it.meta)}</div>`;
@@ -387,8 +411,14 @@ function renderTableTab() {
     html += `<td style="color:var(--vscode-descriptionForeground);font-variant-numeric:tabular-nums">${it.line}</td>`;
     html += `<td style="max-width:260px">`;
     html += `<span style="padding-left:${it.depth * 14}px;display:inline-flex;align-items:center;gap:4px">`;
-    if (it.depth > 0) html += `<span style="color:var(--vscode-descriptionForeground);font-size:11px">›</span>`;
-    html += esc(it.text);
+    if (it.headingLevel) {
+      html += `<span class="heading-icon-sm">H</span>`;
+      html += `<span style="font-weight:700">${esc(it.text)}</span>`;
+      html += `<span class="heading-badge">H${it.headingLevel}</span>`;
+    } else {
+      if (it.depth > 0) html += `<span style="color:var(--vscode-descriptionForeground);font-size:11px">›</span>`;
+      html += esc(it.text);
+    }
     if (it.isAncestor) html += ` <span style="font-size:10px;opacity:0.6;background:var(--vscode-textBlockQuote-background);padding:1px 4px;border-radius:3px">parent</span>`;
     html += `</span></td>`;
     html += `<td>${tagBadgesHtml(it.tags)}</td>`;
