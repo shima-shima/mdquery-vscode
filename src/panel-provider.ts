@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { parseMarkdown, countItems, getAllMetaKeys, getAllTags, type ParsedItem } from './lib/markdown-parser';
+import { parseMarkdown, countItems, getAllMetaKeys, getAllTags, getAllMetaValues, type ParsedItem } from './lib/markdown-parser';
 import { filterItems, type FilterResult } from './lib/query-filter';
 
 export class MdQueryPanelProvider {
@@ -122,6 +122,7 @@ export class MdQueryPanelProvider {
     const totalCount = countItems(this.parsed);
     const metaKeys = getAllMetaKeys(this.parsed);
     const allTags = getAllTags(this.parsed);
+    const metaValues = getAllMetaValues(this.parsed);
 
     // Convert Set to Array for serialization
     const ancestorLinesArray = Array.from(result.ancestorLines);
@@ -135,6 +136,7 @@ export class MdQueryPanelProvider {
       ancestorLines: ancestorLinesArray,
       metaKeys,
       allTags,
+      metaValues,
       query: this.currentQuery,
     });
 
@@ -328,29 +330,107 @@ export class MdQueryPanelProvider {
       font-family: var(--vscode-editor-font-family);
       display: none;
     }
-    .presets {
+    /* ---- Saved filters ---- */
+    .saved-filters {
       margin-top: var(--spacing-xs);
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 4px;
     }
-    .preset-btn {
-      padding: 2px 8px;
+    .saved-filters:empty { display: none; }
+    .saved-filters-icon { font-size: 12px; opacity: 0.6; margin-right: 2px; }
+    .saved-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 4px 2px 8px;
       font-size: 11px;
-      border: 1px solid var(--vscode-button-secondaryBorder, var(--vscode-panel-border));
+      border: 1px solid var(--vscode-panel-border);
       background: var(--vscode-button-secondaryBackground);
       color: var(--vscode-button-secondaryForeground);
       border-radius: 10px;
       cursor: pointer;
       white-space: nowrap;
+      max-width: 200px;
     }
-    .preset-btn:hover {
-      background: var(--vscode-button-secondaryHoverBackground);
-    }
-    .preset-btn.active {
+    .saved-chip:hover { background: var(--vscode-button-secondaryHoverBackground); }
+    .saved-chip.active {
       background: var(--vscode-button-background);
       color: var(--vscode-button-foreground);
       border-color: var(--vscode-button-background);
+    }
+    .saved-chip .chip-label { overflow: hidden; text-overflow: ellipsis; }
+    .saved-chip .chip-remove {
+      padding: 0 2px;
+      font-size: 12px;
+      opacity: 0.6;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: inherit;
+      border-radius: 50%;
+      line-height: 1;
+    }
+    .saved-chip .chip-remove:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+    /* ---- Save filter inline form ---- */
+    .save-filter-form {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .save-filter-form input {
+      width: 120px;
+      padding: 2px 6px;
+      font-size: 11px;
+      border: 1px solid var(--vscode-input-border);
+      background: var(--vscode-input-background);
+      color: var(--vscode-input-foreground);
+      border-radius: var(--radius);
+      outline: none;
+      font-family: var(--vscode-editor-font-family);
+    }
+    .save-filter-form input:focus { border-color: var(--vscode-focusBorder); }
+
+    /* ---- Suggest dropdown ---- */
+    .suggest-wrap { position: relative; flex: 1; }
+    .suggest-list {
+      position: absolute;
+      z-index: 50;
+      left: 0; right: 0;
+      margin-top: 4px;
+      background: var(--vscode-editor-background);
+      border: 1px solid var(--vscode-panel-border);
+      border-radius: var(--radius);
+      max-height: 240px;
+      overflow: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .suggest-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-family: var(--vscode-editor-font-family);
+      border: none;
+      background: none;
+      color: var(--vscode-foreground);
+      cursor: pointer;
+      text-align: left;
+    }
+    .suggest-item:hover, .suggest-item.selected {
+      background: var(--vscode-list-hoverBackground);
+    }
+    .suggest-item .suggest-icon { opacity: 0.5; font-size: 11px; }
+
+    /* ---- Copy JSON button ---- */
+    .copy-json-btn {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 3px 8px;
+      white-space: nowrap;
     }
     .btn {
       padding: 4px 10px;
@@ -611,24 +691,24 @@ export class MdQueryPanelProvider {
 
   <div class="query-bar">
     <div class="query-row">
-      <input type="text" class="query-input" id="queryInput" placeholder="#tag @key(val) key:val key>val … スペース=AND, OR=OR" />
+      <div class="suggest-wrap">
+        <input type="text" class="query-input" id="queryInput" placeholder="#tag @key(val) key:val key>val … スペース=AND, OR=OR" autocomplete="off" spellcheck="false" />
+      </div>
       <button class="btn" id="clearBtn" style="display:none;">クリア</button>
+      <button class="btn" id="saveFilterBtn" style="display:none;" title="フィルタを保存">&#x1F516; 保存</button>
     </div>
     <div class="error-bar" id="errorBar"></div>
-    <div class="presets" id="presets"></div>
+    <div class="saved-filters" id="savedFilters"></div>
   </div>
 
   <div class="tabs">
     <div class="tab-bar" id="tabBar">
       <button class="tab-btn active" data-tab="markdown">Markdown</button>
-      <button class="tab-btn" data-tab="list">Filtered List</button>
       <button class="tab-btn" data-tab="table">Data Table</button>
-      <button class="tab-btn" data-tab="json">Raw JSON</button>
+      <button class="btn copy-json-btn" id="copyJsonBtn">📋 JSON</button>
     </div>
     <div class="tab-content active" id="tab-markdown"></div>
-    <div class="tab-content" id="tab-list"></div>
     <div class="tab-content" id="tab-table"></div>
-    <div class="tab-content" id="tab-json"></div>
   </div>
 
   <div class="waiting" id="waitingState">

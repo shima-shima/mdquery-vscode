@@ -161,7 +161,13 @@ const html = `<!DOCTYPE html>
       matchedCount: 7,
       ancestorLines: [],
       metaKeys: ['priority', 'due', 'cost', 'assignee'],
-      allTags: ['backend', 'design', 'frontend'],
+      allTags: ['backend', 'design', 'frontend', 'infra', 'security', 'ui'],
+      metaValues: {
+        priority: ['high', 'medium', 'low'],
+        due: ['2024-03-15', '2024-03-20', '2024-03-25', '2024-04-01', '2024-04-15', '2024-05-01'],
+        cost: ['3000', '5000', '10000'],
+        assignee: ['田中', '鈴木', '山田'],
+      },
       query: '',
     }, '*'), 100);
   </script>

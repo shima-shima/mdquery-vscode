@@ -325,3 +325,22 @@ export function getAllTags(items: ParsedItem[]): string[] {
   })(items);
   return Array.from(tags).sort();
 }
+
+/** Collect all unique values for each meta key (recursive). */
+export function getAllMetaValues(items: ParsedItem[]): Record<string, string[]> {
+  const map = new Map<string, Set<string>>();
+  (function walk(list: ParsedItem[]) {
+    for (const it of list) {
+      for (const [k, v] of Object.entries(it.meta)) {
+        if (!map.has(k)) map.set(k, new Set());
+        map.get(k)!.add(v);
+      }
+      if (it.children) walk(it.children);
+    }
+  })(items);
+  const result: Record<string, string[]> = {};
+  for (const [k, vs] of map) {
+    result[k] = Array.from(vs).sort();
+  }
+  return result;
+}
