@@ -472,15 +472,23 @@ function renderAll() {
 function goToLine(line: number) { vscode.postMessage({ type: 'goToLine', line }); }
 function copyText(text: string) { vscode.postMessage({ type: 'copyToClipboard', text }); }
 
+// SVG icon constants (Lucide-style)
+const SVG_CHECK_SQUARE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`;
+const SVG_SQUARE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>`;
+const SVG_CHEVRON_RIGHT = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-icon chevron-icon"><path d="m9 18 6-6-6-6"/></svg>`;
+const SVG_HEADING = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-icon heading-svg"><path d="M6 12h12"/><path d="M6 20V4"/><path d="M18 20V4"/></svg>`;
+
 function checkIconHtml(checked: boolean | null): string {
   if (checked === null) return '';
   return checked
-    ? `<span class="check-icon checked">☑</span>`
-    : `<span class="check-icon unchecked">☐</span>`;
+    ? `<span class="check-icon checked">${SVG_CHECK_SQUARE}</span>`
+    : `<span class="check-icon unchecked">${SVG_SQUARE}</span>`;
 }
 
+const SVG_HASH = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-icon"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>`;
+
 function tagBadgesHtml(tags: string[]): string {
-  return tags.map(t => `<span class="badge badge-tag">#${esc(t)}</span>`).join('');
+  return tags.map(t => `<span class="badge badge-tag">${SVG_HASH}${esc(t)}</span>`).join('');
 }
 
 function metaBadgesHtml(meta: Record<string, string>): string {
@@ -551,17 +559,17 @@ function renderTableTab() {
 
   for (const it of flat) {
     html += `<tr class="${it.isAncestor ? 'ancestor' : ''}" data-line="${it.line}">`;
-    html += `<td>${checkIconHtml(it.checked)}</td>`;
-    html += `<td style="color:var(--vscode-descriptionForeground);font-variant-numeric:tabular-nums">${it.line}</td>`;
-    html += `<td style="max-width:260px"><span style="padding-left:${it.depth * 14}px;display:inline-flex;align-items:center;gap:4px">`;
+    html += `<td class="check-cell">${checkIconHtml(it.checked)}</td>`;
+    html += `<td class="line-cell">${it.line}</td>`;
+    html += `<td class="text-cell"><span style="padding-left:${it.depth * 12}px;display:inline-flex;align-items:center;gap:4px">`;
     if (it.headingLevel) {
-      html += `<span class="heading-icon-sm">H</span><span style="font-weight:700">${esc(it.text)}</span><span class="heading-badge">H${it.headingLevel}</span>`;
+      html += `${SVG_HEADING}<span style="font-weight:700">${esc(it.text)}</span><span class="heading-badge">H${it.headingLevel}</span>`;
     } else {
-      if (it.depth > 0) html += `<span style="color:var(--vscode-descriptionForeground);font-size:11px">›</span>`;
+      if (it.depth > 0) html += SVG_CHEVRON_RIGHT;
       html += esc(it.text);
     }
     if (it.isAncestor) html += ` <span style="font-size:10px;opacity:0.6;background:var(--vscode-textBlockQuote-background);padding:1px 4px;border-radius:3px">parent</span>`;
-    html += `</span></td><td>${tagBadgesHtml(it.tags)}</td>`;
+    html += `</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${tagBadgesHtml(it.tags)}</div></td>`;
     for (const k of currentMetaKeys) {
       html += `<td class="meta-cell">${it.meta[k] ? `<span class="has-value">${esc(it.meta[k])}</span>` : '<span class="no-value">—</span>'}</td>`;
     }

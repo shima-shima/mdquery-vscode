@@ -545,6 +545,15 @@ export class MdQueryPanelProvider {
       background: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
       border-radius: 2px;
     }
+    /* SVG icons used inline */
+    .inline-icon {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+    .chevron-icon { color: var(--vscode-descriptionForeground); }
+    .heading-svg { color: var(--vscode-textLink-foreground); }
     .heading-level-label {
       color: var(--vscode-textLink-foreground);
       font-weight: 500;
@@ -585,8 +594,8 @@ export class MdQueryPanelProvider {
       white-space: nowrap;
     }
     .badge-tag {
-      background: var(--vscode-badge-background);
-      color: var(--vscode-badge-foreground);
+      background: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+      color: var(--vscode-textLink-foreground);
     }
     .badge-meta {
       background: var(--vscode-textBlockQuote-background);
@@ -602,41 +611,48 @@ export class MdQueryPanelProvider {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
     }
-    .check-icon.checked { color: var(--vscode-testing-iconPassed); }
-    .check-icon.unchecked { color: var(--vscode-descriptionForeground); }
+    .check-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+    .check-icon.checked svg { color: var(--vscode-testing-iconPassed); }
+    .check-icon.unchecked svg { color: var(--vscode-descriptionForeground); opacity: 0.6; }
 
     /* ---- Table view ---- */
-    .table-wrap { overflow-x: auto; border: 1px solid var(--vscode-panel-border); border-radius: var(--radius); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--vscode-panel-border); border-radius: 6px; }
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 13px;
     }
     .data-table th {
       text-align: left;
-      padding: 6px 10px;
+      padding: 6px 12px;
       background: var(--vscode-sideBar-background);
       border-bottom: 1px solid var(--vscode-panel-border);
       font-weight: 600;
       white-space: nowrap;
+      font-size: 12px;
     }
-    .data-table th.mono { font-family: var(--vscode-editor-font-family); }
+    .data-table th.mono { font-family: var(--vscode-editor-font-family); font-size: 11px; }
     .data-table td {
-      padding: 4px 10px;
+      padding: 6px 12px;
       border-bottom: 1px solid var(--vscode-panel-border);
-      vertical-align: top;
+      vertical-align: middle;
     }
-    .data-table tr { cursor: pointer; }
-    .data-table tr:hover { background: var(--vscode-list-hoverBackground); }
-    .data-table tr.ancestor { opacity: 0.5; }
+    .data-table tbody tr { cursor: pointer; transition: background 0.1s; }
+    .data-table tbody tr:hover { background: var(--vscode-list-hoverBackground); }
+    .data-table tr.ancestor { opacity: 0.5; background: color-mix(in srgb, var(--vscode-sideBar-background) 30%, transparent); }
+    .data-table td.check-cell { text-align: center; width: 32px; }
+    .data-table td.line-cell { font-variant-numeric: tabular-nums; color: var(--vscode-descriptionForeground); }
+    .data-table td.text-cell { max-width: 280px; font-weight: 500; }
     .meta-cell {
       font-family: var(--vscode-editor-font-family);
       font-size: 11px;
     }
     .meta-cell .has-value {
-      padding: 1px 6px;
+      padding: 2px 6px;
       border-radius: var(--radius);
       background: var(--vscode-textBlockQuote-background);
     }
