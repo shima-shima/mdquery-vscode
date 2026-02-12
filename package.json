@@ -60,7 +60,8 @@
   "scripts": {
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
-    "package": "vsce package"
+    "package": "vsce package",
+    "check-sync": "bash scripts/check-sync.sh"
   },
   "dependencies": {
     "unified": "^11.0.5",
