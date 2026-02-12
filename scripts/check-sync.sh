@@ -6,7 +6,7 @@ set -e
 WEB_ROOT="${1:-../mdquery-web}"
 VSC_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-FILES="markdown-parser.ts query-filter.ts"
+FILES="markdown-parser.ts query-filter.ts renderers.ts suggest.ts"
 OK=true
 
 for f in $FILES; do
@@ -29,7 +29,7 @@ done
 
 if [ "$OK" = false ]; then
   echo ""
-  echo "To sync: cp $WEB_ROOT/src/lib/{markdown-parser,query-filter}.ts $VSC_ROOT/src/lib/"
+  echo "To sync: cp $WEB_ROOT/src/lib/{markdown-parser,query-filter,renderers,suggest}.ts $VSC_ROOT/src/lib/"
   exit 1
 fi
 

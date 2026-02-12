@@ -657,6 +657,13 @@ export class MdQueryPanelProvider {
       background: var(--vscode-textBlockQuote-background);
     }
     .meta-cell .no-value { color: var(--vscode-descriptionForeground); opacity: 0.4; }
+    .ancestor-label {
+      font-size: 10px;
+      opacity: 0.6;
+      background: var(--vscode-textBlockQuote-background);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
 
     /* ---- JSON view ---- */
     .json-view { position: relative; }
