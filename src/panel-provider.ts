@@ -495,12 +495,11 @@ export class MdQueryPanelProvider {
       padding: var(--spacing-md);
       border-radius: var(--radius);
       font-family: var(--vscode-editor-font-family);
-      font-size: 12px;
+      font-size: 0;
       line-height: 1.6;
       white-space: pre-wrap;
-      word-break: break-all;
     }
-    .md-line { padding: 1px 4px; border-radius: 2px; cursor: pointer; display: block; }
+    .md-line { padding: 1px 4px; border-radius: 2px; cursor: pointer; display: block; font-size: 12px; }
     .md-line:hover { background: var(--vscode-list-hoverBackground); }
     .md-line.ancestor { opacity: 0.5; }
     .md-line.heading { font-weight: 700; margin-top: 6px; }
