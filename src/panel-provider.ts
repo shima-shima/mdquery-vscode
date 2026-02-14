@@ -20,14 +20,13 @@ export class MdQueryPanelProvider {
   ) {
     this.statusBarItem = statusBarItem;
 
-    // Decorations
+    // Decorations — subtle highlight so matched lines are barely tinted
     this.matchDecoration = vscode.window.createTextEditorDecorationType({
-      backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
+      backgroundColor: 'rgba(128,128,128,0.07)',
       isWholeLine: true,
     });
     this.ancestorDecoration = vscode.window.createTextEditorDecorationType({
-      backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
-      opacity: '0.4',
+      backgroundColor: 'rgba(128,128,128,0.04)',
       isWholeLine: true,
     });
 
