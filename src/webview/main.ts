@@ -61,7 +61,12 @@ interface ConfigMessage {
   presetQueries: Array<{ label: string; expr: string }>;
 }
 
-type Message = FilterResultMessage | ConfigMessage;
+interface LoadClipsMessage {
+  type: 'loadClips';
+  clips: SavedFilter[];
+}
+
+type Message = FilterResultMessage | ConfigMessage | LoadClipsMessage;
 
 // ===== State =====
 const vscode = acquireVsCodeApi();
@@ -108,7 +113,8 @@ const tabContents: Record<string, HTMLDivElement> = {
 
 // ===== Init =====
 function init() {
-  // Load saved state
+  // Clips are loaded from front matter via 'loadClips' message from extension host.
+  // Also restore from webview state as a fallback for panel re-reveal.
   const state = vscode.getState() as { savedFilters?: SavedFilter[] } | null;
   if (state?.savedFilters) savedFilters = state.savedFilters;
 
@@ -179,6 +185,11 @@ function init() {
         break;
       case 'config':
         break;
+      case 'loadClips':
+        savedFilters = msg.clips || [];
+        vscode.setState({ savedFilters });
+        renderSavedFilters();
+        break;
     }
   });
 
@@ -205,6 +216,8 @@ function updateButtons() {
 // ===== Saved filters =====
 function persistState() {
   vscode.setState({ savedFilters });
+  // Persist to front matter via extension host
+  vscode.postMessage({ type: 'saveClips', clips: savedFilters });
 }
 
 function renderSavedFilters() {

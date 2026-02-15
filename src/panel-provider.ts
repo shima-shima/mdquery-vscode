@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { parseMarkdown, countItems, getAllMetaKeys, getAllTags, getAllMetaValues, type ParsedItem } from './lib/markdown-parser';
 import { filterItems, type FilterResult } from './lib/query-filter';
+import { parseFrontMatterClips, updateFrontMatterClips, type SavedFilter } from './lib/frontmatter';
 
 export class MdQueryPanelProvider {
   private static instance: MdQueryPanelProvider | undefined;
@@ -13,6 +14,10 @@ export class MdQueryPanelProvider {
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private matchDecoration: vscode.TextEditorDecorationType;
   private ancestorDecoration: vscode.TextEditorDecorationType;
+  private currentDocUri: string | undefined;
+  private savedFilters: SavedFilter[] = [];
+  /** Suppress onDidChangeTextDocument while we edit front matter */
+  private suppressDocChange = false;
 
   private constructor(
     private readonly context: vscode.ExtensionContext,
@@ -57,6 +62,7 @@ export class MdQueryPanelProvider {
     // Listen to editor changes
     this.disposables.push(
       vscode.workspace.onDidChangeTextDocument((e) => {
+        if (this.suppressDocChange) return;
         if (e.document.languageId === 'markdown') {
           this.debouncedUpdate(e.document);
         }
@@ -108,11 +114,21 @@ export class MdQueryPanelProvider {
   }
 
   private updateFromDocument(doc: vscode.TextDocument) {
+    const text = doc.getText();
     try {
-      this.parsed = parseMarkdown(doc.getText());
+      this.parsed = parseMarkdown(text);
     } catch {
       this.parsed = [];
     }
+
+    // When switching to a different file, load clips from front matter
+    const uri = doc.uri.toString();
+    if (uri !== this.currentDocUri) {
+      this.currentDocUri = uri;
+      this.savedFilters = parseFrontMatterClips(text);
+      this.sendClipsToWebview();
+    }
+
     this.sendFilterResult();
   }
 
@@ -216,7 +232,48 @@ export class MdQueryPanelProvider {
           this.updateFromDocument(editor.document);
         }
         break;
+
+      case 'saveClips':
+        this.savedFilters = (msg.clips as SavedFilter[]) || [];
+        this.writeClipsToFrontMatter();
+        break;
     }
+  }
+
+  private sendClipsToWebview() {
+    this.panel.webview.postMessage({
+      type: 'loadClips',
+      clips: this.savedFilters,
+    });
+  }
+
+  private async writeClipsToFrontMatter() {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.languageId !== 'markdown') return;
+
+    const doc = editor.document;
+    const oldText = doc.getText();
+    const newText = updateFrontMatterClips(oldText, this.savedFilters);
+    if (newText === oldText) return;
+
+    this.suppressDocChange = true;
+    const fullRange = new vscode.Range(
+      doc.positionAt(0),
+      doc.positionAt(oldText.length)
+    );
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(doc.uri, fullRange, newText);
+    await vscode.workspace.applyEdit(edit);
+    await doc.save();
+    this.suppressDocChange = false;
+
+    // Re-parse after edit so line numbers stay correct
+    try {
+      this.parsed = parseMarkdown(newText);
+    } catch {
+      this.parsed = [];
+    }
+    this.sendFilterResult();
   }
 
   private sendConfig() {
