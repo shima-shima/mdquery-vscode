@@ -22,11 +22,11 @@ export class MdQueryPanelProvider {
 
     // Decorations — subtle highlight so matched lines are barely tinted
     this.matchDecoration = vscode.window.createTextEditorDecorationType({
-      backgroundColor: 'rgba(128,128,128,0.10)',
+      backgroundColor: 'rgba(128,128,128,0.20)',
       isWholeLine: true,
     });
     this.ancestorDecoration = vscode.window.createTextEditorDecorationType({
-      backgroundColor: 'rgba(128,128,128,0.06)',
+      backgroundColor: 'rgba(128,128,128,0.12)',
       isWholeLine: true,
     });
 
