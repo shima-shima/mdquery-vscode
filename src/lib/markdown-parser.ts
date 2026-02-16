@@ -196,9 +196,19 @@ function processHeading(
  * subsequent list items and sub-headings, based on heading-level hierarchy.
  * Lists appearing before any heading are placed at the root level.
  */
+/** Strip YAML front matter, replacing with blank lines to preserve line numbers. */
+function stripFrontMatter(text: string): string {
+  const m = /^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/.exec(text);
+  if (!m) return text;
+  // Replace front matter with the same number of newlines
+  const lineCount = m[0].split(/\r?\n/).length - 1;
+  return '\n'.repeat(lineCount) + text.slice(m[0].length);
+}
+
 export function parseMarkdown(markdown: string): ParsedItem[] {
+  const stripped = stripFrontMatter(markdown);
   const processor = unified().use(remarkParse).use(remarkGfm);
-  const tree = processor.parse(markdown) as Root;
+  const tree = processor.parse(stripped) as Root;
   const sourceLines = markdown.split("\n");
   const rootItems: ParsedItem[] = [];
 
