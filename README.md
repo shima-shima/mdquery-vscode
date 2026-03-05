@@ -120,3 +120,17 @@ code --uninstall-extension mdquery.mdquery
 4. `.md` ファイルを開き、`Cmd+Shift+P` → **"MdQuery: Open Query Panel"**
 
 > ファイル変更を自動検知させたい場合は、別ターミナルで `npm run watch` を並行実行してください。
+
+### 7. Docker でビルド (Node.js 環境不要)
+
+ローカルに Node.js をインストールせずに、Docker だけでビルド＆パッケージングできます。
+
+```bash
+# イメージをビルド (.vsix はコンテナ内で生成される)
+docker build -t mdquery-build .
+
+# .vsix ファイルをホストの out/ ディレクトリに取り出す
+docker run --rm -v "$(pwd)/out:/out" mdquery-build sh -c 'cp /workspace/*.vsix /out/'
+```
+
+`out/mdquery-0.1.0.vsix` が生成されるので、[方法 A / 方法 B](#4-vs-code-へのインストール) の手順でインストールしてください。
