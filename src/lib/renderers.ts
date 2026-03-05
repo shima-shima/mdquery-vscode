@@ -123,9 +123,116 @@ export function renderTableHtml(items: ParsedItem[], metaKeys: string[], ancesto
 }
 
 /* ------------------------------------------------------------------ */
+/*  Calendar HTML                                                      */
+/* ------------------------------------------------------------------ */
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Collect date→items map from all meta values matching YYYY-MM-DD. */
+export function collectDateMap(items: ParsedItem[]): Map<string, { item: ParsedItem; key: string }[]> {
+  const map = new Map<string, { item: ParsedItem; key: string }[]>();
+  const walk = (list: ParsedItem[]) => {
+    for (const it of list) {
+      for (const [k, v] of Object.entries(it.meta)) {
+        if (ISO_DATE_RE.test(v)) {
+          let arr = map.get(v);
+          if (!arr) { arr = []; map.set(v, arr); }
+          arr.push({ item: it, key: k });
+        }
+      }
+      if (it.children) walk(it.children);
+    }
+  };
+  walk(items);
+  return map;
+}
+
+/** Find the earliest month (as {year,month}) that has items, or null. */
+export function findEarliestMonth(dateMap: Map<string, unknown>): { year: number; month: number } | null {
+  let earliest: string | null = null;
+  for (const d of dateMap.keys()) {
+    if (!earliest || d < earliest) earliest = d;
+  }
+  if (!earliest) return null;
+  const [y, m] = earliest.split('-').map(Number);
+  return { year: y, month: m };
+}
+
+export function renderCalendarHtml(
+  items: ParsedItem[],
+  ancestorLines: Set<number>,
+  year: number,
+  month: number,
+): string {
+  const dateMap = collectDateMap(items);
+
+  if (dateMap.size === 0) {
+    return emptyHtml('📅', '日付メタデータが見つかりません');
+  }
+
+  // Month info
+  const firstDay = new Date(year, month - 1, 1);
+  const startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const totalCells = Math.ceil((startDow + daysInMonth) / 7) * 7;
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  let html = `<div class="cal-container">`;
+
+  // Header row with navigation
+  html += `<div class="cal-header">`;
+  html += `<button class="btn cal-nav" data-cal-nav="prev">◀</button>`;
+  html += `<span class="cal-title">${year}年${month}月</span>`;
+  html += `<button class="btn cal-nav" data-cal-nav="next">▶</button>`;
+  html += `</div>`;
+
+  // Day-of-week labels
+  html += `<div class="cal-grid">`;
+  const DOW = ['月', '火', '水', '木', '金', '土', '日'];
+  for (const d of DOW) {
+    html += `<div class="cal-dow">${d}</div>`;
+  }
+
+  // Day cells
+  for (let i = 0; i < totalCells; i++) {
+    const dayNum = i - startDow + 1;
+    const inMonth = dayNum >= 1 && dayNum <= daysInMonth;
+
+    if (!inMonth) {
+      html += `<div class="cal-cell cal-cell-empty"></div>`;
+      continue;
+    }
+
+    const dateStr = `${year}-${pad(month)}-${pad(dayNum)}`;
+    const entries = dateMap.get(dateStr) || [];
+    const isToday = (() => {
+      const now = new Date();
+      return now.getFullYear() === year && now.getMonth() + 1 === month && now.getDate() === dayNum;
+    })();
+    const hasItems = entries.length > 0;
+
+    html += `<div class="cal-cell${isToday ? ' cal-today' : ''}${hasItems ? ' cal-has-items' : ''}">` ;
+    html += `<div class="cal-day-num">${dayNum}</div>`;
+    html += `<div class="cal-items">`;
+    for (const { item } of entries) {
+      const isAnc = ancestorLines.has(item.line);
+      html += `<div class="cal-item${isAnc ? ' ancestor' : ''}" data-line="${item.line}" title="${esc(item.text)}">`;
+      if (item.checked === true) html += `<span class="cal-check">✓</span>`;
+      else if (item.checked === false) html += `<span class="cal-uncheck">○</span>`;
+      html += `${esc(item.text)}</div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  html += `</div></div>`;
+  return html;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
 /* ------------------------------------------------------------------ */
 
-export function emptyHtml(icon: string): string {
-  return `<div class="empty"><div class="empty-icon">${icon}</div><div>マッチする項目がありません</div></div>`;
+export function emptyHtml(icon: string, message = 'マッチする項目がありません'): string {
+  return `<div class="empty"><div class="empty-icon">${icon}</div><div>${esc(message)}</div></div>`;
 }

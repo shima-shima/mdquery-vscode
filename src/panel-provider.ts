@@ -732,6 +732,83 @@ export class MdQueryPanelProvider {
       overflow: auto;
     }
 
+    /* ---- Calendar view ---- */
+    .cal-container { height: 100%; display: flex; flex-direction: column; }
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-md);
+      padding-bottom: var(--spacing-sm);
+      flex-shrink: 0;
+    }
+    .cal-title { font-weight: 600; font-size: 14px; min-width: 100px; text-align: center; }
+    .cal-nav { padding: 4px 8px; font-size: 11px; line-height: 1; }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-template-rows: auto;
+      flex: 1;
+      gap: 1px;
+      background: var(--vscode-panel-border);
+      border: 1px solid var(--vscode-panel-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      min-height: 0;
+    }
+    .cal-dow {
+      padding: 4px 0;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--vscode-sideBar-background);
+      color: var(--vscode-descriptionForeground);
+    }
+    .cal-cell {
+      background: var(--vscode-editor-background);
+      padding: 2px 4px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .cal-cell-empty { background: var(--vscode-sideBar-background); opacity: 0.4; }
+    .cal-today { background: color-mix(in srgb, var(--vscode-focusBorder) 10%, var(--vscode-editor-background)); }
+    .cal-today .cal-day-num { color: var(--vscode-focusBorder); font-weight: 700; }
+    .cal-day-num {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--vscode-descriptionForeground);
+      line-height: 1;
+      padding-bottom: 2px;
+      flex-shrink: 0;
+    }
+    .cal-items {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-height: 0;
+    }
+    .cal-item {
+      font-size: 11px;
+      line-height: 1.3;
+      padding: 1px 3px;
+      border-radius: 2px;
+      background: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+      color: var(--vscode-foreground);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .cal-item:hover { background: color-mix(in srgb, var(--vscode-textLink-foreground) 30%, transparent); }
+    .cal-item.ancestor { opacity: 0.5; }
+    .cal-check { color: var(--vscode-testing-iconPassed); margin-right: 2px; }
+    .cal-uncheck { color: var(--vscode-descriptionForeground); margin-right: 2px; }
+
     /* ---- Empty state ---- */
     .empty {
       display: flex;
@@ -783,10 +860,12 @@ export class MdQueryPanelProvider {
     <div class="tab-bar" id="tabBar">
       <button class="tab-btn active" data-tab="markdown">Markdown</button>
       <button class="tab-btn" data-tab="table">Data Table</button>
+      <button class="tab-btn" data-tab="calendar">Calendar</button>
       <button class="btn copy-json-btn" id="copyJsonBtn">📋 JSON</button>
     </div>
     <div class="tab-content active" id="tab-markdown"></div>
     <div class="tab-content" id="tab-table"></div>
+    <div class="tab-content" id="tab-calendar"></div>
   </div>
 
   <div class="waiting" id="waitingState">

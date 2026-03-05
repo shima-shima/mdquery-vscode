@@ -12,6 +12,9 @@ import {
   collectRawLines,
   mdLinesHtml,
   renderTableHtml,
+  renderCalendarHtml,
+  collectDateMap,
+  findEarliestMonth,
   emptyHtml,
 } from '../lib/renderers';
 import {
@@ -85,6 +88,11 @@ let hasData = false;
 let jsonCopied = false;
 let jsonCopyTimer: ReturnType<typeof setTimeout> | undefined;
 
+// Calendar state
+let calendarYear = new Date().getFullYear();
+let calendarMonth = new Date().getMonth() + 1;
+let calendarInitialized = false;
+
 // Saved filters (persisted via vscode state)
 let savedFilters: SavedFilter[] = [];
 
@@ -109,6 +117,7 @@ const copyJsonBtn = $('#copyJsonBtn') as HTMLButtonElement;
 const tabContents: Record<string, HTMLDivElement> = {
   markdown: $('#tab-markdown') as HTMLDivElement,
   table: $('#tab-table') as HTMLDivElement,
+  calendar: $('#tab-calendar') as HTMLDivElement,
 };
 
 // ===== Init =====
@@ -364,6 +373,9 @@ function handleFilterResult(msg: FilterResultMessage) {
   currentTotalCount = msg.totalCount;
   currentMatchedCount = msg.matchedCount;
 
+  // Reset calendar to earliest month on each new result
+  calendarInitialized = false;
+
   waitingState.style.display = 'none';
   document.querySelector('.tabs')!.removeAttribute('style');
 
@@ -393,6 +405,7 @@ function renderError() {
 function renderAll() {
   renderMarkdownTab();
   renderTableTab();
+  renderCalendarTab();
 }
 
 function goToLine(line: number) { vscode.postMessage({ type: 'goToLine', line }); }
@@ -408,6 +421,54 @@ function renderMarkdownTab() {
   el.querySelectorAll('.md-line').forEach(line => {
     line.addEventListener('click', () => {
       const l = parseInt((line as HTMLElement).dataset.line || '0');
+      if (l > 0) goToLine(l);
+    });
+  });
+}
+
+// ===== CALENDAR TAB =====
+function renderCalendarTab() {
+  const el = tabContents.calendar;
+
+  // Determine initial month: earliest month with items (only on first data load or query change)
+  if (!calendarInitialized) {
+    const dateMap = collectDateMap(currentItems);
+    const earliest = findEarliestMonth(dateMap);
+    if (earliest) {
+      calendarYear = earliest.year;
+      calendarMonth = earliest.month;
+    } else {
+      const now = new Date();
+      calendarYear = now.getFullYear();
+      calendarMonth = now.getMonth() + 1;
+    }
+    calendarInitialized = true;
+  }
+
+  el.innerHTML = renderCalendarHtml(currentItems, currentAncestorLines, calendarYear, calendarMonth);
+  bindCalendarEvents(el);
+}
+
+function bindCalendarEvents(el: HTMLDivElement) {
+  // Month navigation
+  el.querySelectorAll('[data-cal-nav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dir = (btn as HTMLElement).dataset.calNav;
+      if (dir === 'prev') {
+        calendarMonth--;
+        if (calendarMonth < 1) { calendarMonth = 12; calendarYear--; }
+      } else {
+        calendarMonth++;
+        if (calendarMonth > 12) { calendarMonth = 1; calendarYear++; }
+      }
+      renderCalendarTab();
+    });
+  });
+
+  // Click item to go to line
+  el.querySelectorAll('.cal-item[data-line]').forEach(item => {
+    item.addEventListener('click', () => {
+      const l = parseInt((item as HTMLElement).dataset.line || '0');
       if (l > 0) goToLine(l);
     });
   });
