@@ -102,6 +102,44 @@ let suggestItems: SuggestItem[] = [];
 let suggestSelectedIdx = 0;
 let suppressSuggestOnFocus = false;
 
+// ===== Calendar tooltip =====
+let calTooltip: HTMLDivElement | null = null;
+
+function getCalTooltip(): HTMLDivElement {
+  if (!calTooltip) {
+    calTooltip = document.createElement('div');
+    calTooltip.className = 'cal-tooltip';
+    document.body.appendChild(calTooltip);
+  }
+  return calTooltip;
+}
+
+function showCalTooltip(target: HTMLElement) {
+  const text = target.dataset.tooltip;
+  if (!text) return;
+  const tip = getCalTooltip();
+  tip.classList.remove('visible');
+  tip.textContent = text;
+
+  // Measure while invisible (opacity 0, but display block)
+  const tw = tip.offsetWidth;
+  const th = tip.offsetHeight;
+  const rect = target.getBoundingClientRect();
+  let left = rect.left;
+  let top = rect.bottom + 4;
+  if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+  if (left < 8) left = 8;
+  if (top + th > window.innerHeight - 8) top = rect.top - th - 4;
+
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+  tip.classList.add('visible');
+}
+
+function hideCalTooltip() {
+  if (calTooltip) calTooltip.classList.remove('visible');
+}
+
 // ===== DOM refs =====
 const $ = (s: string) => document.querySelector(s)!;
 const queryInput = $('#queryInput') as HTMLInputElement;
@@ -465,12 +503,14 @@ function bindCalendarEvents(el: HTMLDivElement) {
     });
   });
 
-  // Click item to go to line
+  // Click item to go to line, tooltip on hover
   el.querySelectorAll('.cal-item[data-line]').forEach(item => {
     item.addEventListener('click', () => {
       const l = parseInt((item as HTMLElement).dataset.line || '0');
       if (l > 0) goToLine(l);
     });
+    item.addEventListener('mouseenter', () => showCalTooltip(item as HTMLElement));
+    item.addEventListener('mouseleave', hideCalTooltip);
   });
 }
 

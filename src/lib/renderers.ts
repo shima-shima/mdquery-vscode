@@ -217,7 +217,7 @@ export function renderCalendarHtml(
     html += `<div class="cal-items">`;
     for (const { item } of entries) {
       const isAnc = ancestorLines.has(item.line);
-      html += `<div class="cal-item${isAnc ? ' ancestor' : ''}" data-line="${item.line}" title="${esc(item.text)}">`;
+      html += `<div class="cal-item${isAnc ? ' ancestor' : ''}" data-line="${item.line}" data-tooltip="${esc(item.text)}">`;
       if (item.checked === true) html += `<span class="cal-check">✓</span>`;
       else if (item.checked === false) html += `<span class="cal-uncheck">○</span>`;
       html += `${esc(item.text)}</div>`;

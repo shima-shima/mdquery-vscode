@@ -808,6 +808,25 @@ export class MdQueryPanelProvider {
     .cal-item.ancestor { opacity: 0.5; }
     .cal-check { color: var(--vscode-testing-iconPassed); margin-right: 2px; }
     .cal-uncheck { color: var(--vscode-descriptionForeground); margin-right: 2px; }
+    .cal-tooltip {
+      position: fixed;
+      z-index: 10000;
+      max-width: 300px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.4;
+      word-break: break-word;
+      white-space: normal;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background));
+      border: 1px solid var(--vscode-editorHoverWidget-border, var(--vscode-panel-border));
+      color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .cal-tooltip.visible { opacity: 1; }
 
     /* ---- Empty state ---- */
     .empty {
