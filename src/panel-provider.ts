@@ -744,25 +744,38 @@ export class MdQueryPanelProvider {
     }
     .cal-title { font-weight: 600; font-size: 14px; min-width: 100px; text-align: center; }
     .cal-nav { padding: 4px 8px; font-size: 11px; line-height: 1; }
+    .cal-dow-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--vscode-panel-border);
+      border: 1px solid var(--vscode-panel-border);
+      border-bottom: none;
+      border-radius: var(--radius) var(--radius) 0 0;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .cal-dow {
+      padding: 2px 0;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+      background: var(--vscode-sideBar-background);
+      color: var(--vscode-descriptionForeground);
+    }
     .cal-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      grid-template-rows: auto;
+      grid-auto-rows: 1fr;
       flex: 1;
       gap: 1px;
       background: var(--vscode-panel-border);
       border: 1px solid var(--vscode-panel-border);
-      border-radius: var(--radius);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
       overflow: hidden;
       min-height: 0;
-    }
-    .cal-dow {
-      padding: 4px 0;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 600;
-      background: var(--vscode-sideBar-background);
-      color: var(--vscode-descriptionForeground);
     }
     .cal-cell {
       background: var(--vscode-editor-background);

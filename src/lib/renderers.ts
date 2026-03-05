@@ -187,14 +187,17 @@ export function renderCalendarHtml(
   html += `<button class="btn cal-nav" data-cal-nav="next">▶</button>`;
   html += `</div>`;
 
-  // Day-of-week labels
-  html += `<div class="cal-grid">`;
+  // Day-of-week labels (separate row outside the grid)
   const DOW = ['月', '火', '水', '木', '金', '土', '日'];
+  html += `<div class="cal-dow-row">`;
   for (const d of DOW) {
     html += `<div class="cal-dow">${d}</div>`;
   }
+  html += `</div>`;
 
   // Day cells
+  html += `<div class="cal-grid">`;
+
   for (let i = 0; i < totalCells; i++) {
     const dayNum = i - startDow + 1;
     const inMonth = dayNum >= 1 && dayNum <= daysInMonth;
